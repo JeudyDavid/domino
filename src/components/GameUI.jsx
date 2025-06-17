@@ -6,6 +6,7 @@ import ResultModal from './ui/ResultModal';
 import PlayerInfo from './ui/PlayerInfo';
 import ScoreDisplay from './ui/ScoreDisplay';
 import GameStatus from './ui/GameStatus';
+import GameInstructions from './ui/GameInstructions';
 
 const GameUI = () => {
   const { 
@@ -13,21 +14,36 @@ const GameUI = () => {
     showResult,
     currentPlayer,
     players,
-    scores,
-    gameRound,
     board,
     boneyard,
     gameType,
     drawFromBoneyard,
-    nextPlayer
+    nextPlayer,
+    canPlayDomino
   } = useGameStore();
 
+  const currentPlayerData = players[currentPlayer];
+  const hasPlayableDomino = currentPlayerData?.dominoes?.some(domino => 
+    canPlayDomino(domino, board)
+  );
+
   const handlePass = () => {
-    if (gameType === 'draw' && boneyard.length > 0) {
+    if (gameType === 'draw' && boneyard.length > 0 && !hasPlayableDomino) {
       drawFromBoneyard();
     } else {
       nextPlayer();
     }
+  };
+
+  const getPassButtonText = () => {
+    if (gameType === 'draw' && boneyard.length > 0 && !hasPlayableDomino) {
+      return 'Draw';
+    }
+    return 'Pass';
+  };
+
+  const shouldShowPassButton = () => {
+    return !hasPlayableDomino || (gameType === 'draw' && boneyard.length > 0);
   };
 
   return (
@@ -41,27 +57,20 @@ const GameUI = () => {
       {/* Score Display */}
       <ScoreDisplay />
 
+      {/* Game Instructions */}
+      <GameInstructions />
+
       {/* Game Controls */}
-      <div className="game-controls">
-        <button 
-          className="pass-button"
-          onClick={handlePass}
-          style={{
-            position: 'absolute',
-            bottom: '20px',
-            right: '20px',
-            padding: '10px 20px',
-            background: '#FF6B6B',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            fontSize: '16px',
-            cursor: 'pointer'
-          }}
-        >
-          {gameType === 'draw' && boneyard.length > 0 ? 'Draw' : 'Pass'}
-        </button>
-      </div>
+      {shouldShowPassButton() && (
+        <div className="game-controls">
+          <button 
+            className="pass-button"
+            onClick={handlePass}
+          >
+            {getPassButtonText()}
+          </button>
+        </div>
+      )}
 
       {/* Settings Menu */}
       <SettingsMenu />

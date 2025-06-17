@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import useSound from './useSound';
 
@@ -15,27 +14,32 @@ const useGameSounds = () => {
   const { play: playWinner } = useSound('/assets/sounds/sound_winner.ogg');
   const { play: playResult } = useSound('/assets/sounds/sound_result.ogg');
   const { play: playAlert } = useSound('/assets/sounds/sound_alert.ogg');
+  const { play: playShuffleIn } = useSound('/assets/sounds/sound_shuffle_in.ogg');
+  const { play: playShuffleOut } = useSound('/assets/sounds/sound_shuffle_out.ogg');
   
-  const { play: playMainMusic, stop: stopMainMusic } = useSound('/assets/sounds/music_main.ogg', { loop: true, volume: 0.5 });
-  const { play: playGameMusic, stop: stopGameMusic } = useSound('/assets/sounds/music_game.ogg', { loop: true, volume: 0.5 });
+  const { play: playMainMusic, stop: stopMainMusic } = useSound('/assets/sounds/music_main.ogg', { loop: true, volume: 0.3 });
+  const { play: playGameMusic, stop: stopGameMusic } = useSound('/assets/sounds/music_game.ogg', { loop: true, volume: 0.3 });
 
   const sounds = {
-    click: playClick,
-    dominoPick: playDominoPick,
+    click: () => soundEnabled && playClick(),
+    dominoPick: () => soundEnabled && playDominoPick(),
     dominoPlace: () => {
+      if (!soundEnabled) return;
       const sounds = [playDomino1, playDomino2, playDomino3];
       const randomSound = sounds[Math.floor(Math.random() * sounds.length)];
       randomSound();
     },
-    point: playPoint,
-    round: playRound,
-    winner: playWinner,
-    result: playResult,
-    alert: playAlert,
-    startMainMusic: playMainMusic,
-    stopMainMusic: stopMainMusic,
-    startGameMusic: playGameMusic,
-    stopGameMusic: stopGameMusic
+    point: () => soundEnabled && playPoint(),
+    round: () => soundEnabled && playRound(),
+    winner: () => soundEnabled && playWinner(),
+    result: () => soundEnabled && playResult(),
+    alert: () => soundEnabled && playAlert(),
+    shuffleIn: () => soundEnabled && playShuffleIn(),
+    shuffleOut: () => soundEnabled && playShuffleOut(),
+    startMainMusic: () => musicEnabled && playMainMusic(),
+    stopMainMusic: () => stopMainMusic(),
+    startGameMusic: () => musicEnabled && playGameMusic(),
+    stopGameMusic: () => stopGameMusic()
   };
 
   return sounds;

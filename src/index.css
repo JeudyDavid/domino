@@ -76,6 +76,7 @@ html, body {
   width: 64px;
   height: 64px;
   margin-bottom: 20px;
+  animation: spin 2s linear infinite;
 }
 
 .modal-overlay {
@@ -373,6 +374,11 @@ html, body {
   100% { transform: rotate(360deg); }
 }
 
-.loader img {
-  animation: spin 2s linear infinite;
+/* Drag and drop visual feedback */
+.konvajs-content {
+  cursor: grab;
+}
+
+.konvajs-content:active {
+  cursor: grabbing;
 }

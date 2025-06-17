@@ -2,13 +2,59 @@ import React from 'react';
 import { Group } from 'react-konva';
 import DominoTile from './DominoTile';
 import { useGameStore } from '../store/gameStore';
+import useGameSounds from '../hooks/useGameSounds';
 
 const PlayerHand = ({ player, isCurrentPlayer, position = 'bottom' }) => {
   const { playDomino, canPlayDomino, board } = useGameStore();
+  const { dominoPick, dominoPlace } = useGameSounds();
   
-  const handleDominoClick = (domino, index) => {
-    if (isCurrentPlayer && canPlayDomino(domino, board)) {
-      playDomino(domino, index);
+  const handleDominoClick = (e, domino) => {
+    if (!isCurrentPlayer) return;
+    
+    const dominoIndex = player.dominoes.findIndex(d => d.id === domino.id);
+    if (dominoIndex === -1) return;
+    
+    if (canPlayDomino(domino, board)) {
+      dominoPick();
+      setTimeout(() => {
+        if (playDomino(domino, dominoIndex)) {
+          dominoPlace();
+        }
+      }, 100);
+    }
+  };
+
+  const handleDragStart = (e, domino) => {
+    if (!isCurrentPlayer) return;
+    dominoPick();
+  };
+
+  const handleDragEnd = (e, domino) => {
+    if (!isCurrentPlayer) return;
+    
+    const stage = e.target.getStage();
+    const pointerPosition = stage.getPointerPosition();
+    
+    // Check if dropped in board area (center of screen)
+    const boardArea = {
+      x: 200,
+      y: 200,
+      width: 880,
+      height: 368
+    };
+    
+    if (
+      pointerPosition.x >= boardArea.x &&
+      pointerPosition.x <= boardArea.x + boardArea.width &&
+      pointerPosition.y >= boardArea.y &&
+      pointerPosition.y <= boardArea.y + boardArea.height
+    ) {
+      const dominoIndex = player.dominoes.findIndex(d => d.id === domino.id);
+      if (dominoIndex !== -1 && canPlayDomino(domino, board)) {
+        if (playDomino(domino, dominoIndex)) {
+          dominoPlace();
+        }
+      }
     }
   };
 
@@ -44,7 +90,10 @@ const PlayerHand = ({ player, isCurrentPlayer, position = 'bottom' }) => {
             y={handPos.y + yOffset}
             rotation={handPos.rotation}
             scale={0.8}
-            onClick={() => handleDominoClick(domino, index)}
+            onClick={handleDominoClick}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            isDraggable={isCurrentPlayer}
             isPlayable={isPlayable}
             isHighlighted={isCurrentPlayer && isPlayable}
           />

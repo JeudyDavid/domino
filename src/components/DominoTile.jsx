@@ -1,7 +1,8 @@
-import React from 'react';
-import { Rect, Group, Circle } from 'react-konva';
+import React, { useState } from 'react';
+import { Group, Image as KonvaImage } from 'react-konva';
 import { useGameStore } from '../store/gameStore';
 import { themes } from '../utils/themes';
+import useImage from '../hooks/useImage';
 
 const DominoTile = ({ 
   domino, 
@@ -11,37 +12,52 @@ const DominoTile = ({
   scale = 1, 
   onClick, 
   isHighlighted = false,
-  isPlayable = false 
+  isPlayable = false,
+  isDraggable = false,
+  onDragStart,
+  onDragEnd
 }) => {
   const { currentTheme } = useGameStore();
   const theme = themes[currentTheme];
+  const [isDragging, setIsDragging] = useState(false);
+  
+  // Load domino images
+  const [dominoFrontImage] = useImage(theme.bg.front);
+  const [dominoBackImage] = useImage(theme.bg.back);
+  const [highlightImage] = useImage(theme.highlight.image);
+  const [shadowImage] = useImage(theme.shadow.image);
+  const [numbersImage] = useImage(theme.numbers.image);
   
   const tileWidth = 60 * scale;
   const tileHeight = 120 * scale;
-  const dotRadius = 4 * scale;
   
-  // Dot positions for each number (0-6)
-  const dotPatterns = {
-    0: [],
-    1: [[0, 0]],
-    2: [[-0.3, -0.3], [0.3, 0.3]],
-    3: [[-0.3, -0.3], [0, 0], [0.3, 0.3]],
-    4: [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]],
-    5: [[-0.3, -0.3], [0.3, -0.3], [0, 0], [-0.3, 0.3], [0.3, 0.3]],
-    6: [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0], [0.3, 0], [-0.3, 0.3], [0.3, 0.3]]
+  // Calculate sprite positions for numbers
+  const getNumberSpritePosition = (number) => {
+    const spriteSize = 32; // Assuming each number sprite is 32x32
+    return {
+      x: number * spriteSize,
+      y: 0,
+      width: spriteSize,
+      height: spriteSize
+    };
   };
 
-  const renderDots = (number, offsetY) => {
-    const pattern = dotPatterns[number] || [];
-    return pattern.map((pos, index) => (
-      <Circle
-        key={index}
-        x={pos[0] * 15 * scale}
-        y={offsetY + pos[1] * 15 * scale}
-        radius={dotRadius}
-        fill="#000"
-      />
-    ));
+  const handleDragStart = (e) => {
+    if (!isDraggable) return;
+    setIsDragging(true);
+    if (onDragStart) onDragStart(e, domino);
+  };
+
+  const handleDragEnd = (e) => {
+    if (!isDraggable) return;
+    setIsDragging(false);
+    if (onDragEnd) onDragEnd(e, domino);
+  };
+
+  const handleClick = (e) => {
+    if (onClick && !isDragging) {
+      onClick(e, domino);
+    }
   };
 
   return (
@@ -51,46 +67,80 @@ const DominoTile = ({
       rotation={rotation}
       scaleX={scale}
       scaleY={scale}
-      onClick={onClick}
-      onTap={onClick}
+      draggable={isDraggable && isPlayable}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onClick={handleClick}
+      onTap={handleClick}
+      opacity={isDragging ? 0.7 : 1}
     >
       {/* Shadow */}
-      <Rect
-        x={2}
-        y={2}
-        width={tileWidth}
-        height={tileHeight}
-        fill="rgba(0, 0, 0, 0.3)"
-        cornerRadius={8}
-      />
+      {shadowImage && (
+        <KonvaImage
+          image={shadowImage}
+          x={2}
+          y={2}
+          width={tileWidth}
+          height={tileHeight}
+          opacity={0.5}
+        />
+      )}
       
-      {/* Main tile background */}
-      <Rect
-        width={tileWidth}
-        height={tileHeight}
-        fill={isHighlighted ? "#FFD700" : "#F5F5DC"}
-        stroke={isPlayable ? "#00FF00" : "#8B4513"}
-        strokeWidth={isPlayable ? 3 : 2}
-        cornerRadius={8}
-      />
+      {/* Main domino background */}
+      {dominoFrontImage && (
+        <KonvaImage
+          image={dominoFrontImage}
+          width={tileWidth}
+          height={tileHeight}
+        />
+      )}
       
-      {/* Divider line */}
-      <Rect
-        y={tileHeight / 2 - 1}
-        width={tileWidth}
-        height={2}
-        fill="#8B4513"
-      />
+      {/* Highlight overlay for playable dominoes */}
+      {isHighlighted && highlightImage && (
+        <KonvaImage
+          image={highlightImage}
+          width={tileWidth}
+          height={tileHeight}
+          opacity={0.8}
+        />
+      )}
       
-      {/* Top half dots */}
-      <Group x={tileWidth / 2} y={tileHeight / 4}>
-        {renderDots(domino.left, 0)}
-      </Group>
+      {/* Playable border effect */}
+      {isPlayable && (
+        <Group>
+          <KonvaImage
+            image={highlightImage}
+            width={tileWidth}
+            height={tileHeight}
+            opacity={0.3}
+          />
+        </Group>
+      )}
       
-      {/* Bottom half dots */}
-      <Group x={tileWidth / 2} y={(tileHeight * 3) / 4}>
-        {renderDots(domino.right, 0)}
-      </Group>
+      {/* Numbers using sprite sheet */}
+      {numbersImage && (
+        <Group>
+          {/* Top number */}
+          <KonvaImage
+            image={numbersImage}
+            x={tileWidth / 2 - 16}
+            y={tileHeight / 4 - 16}
+            width={32}
+            height={32}
+            crop={getNumberSpritePosition(domino.left)}
+          />
+          
+          {/* Bottom number */}
+          <KonvaImage
+            image={numbersImage}
+            x={tileWidth / 2 - 16}
+            y={(tileHeight * 3) / 4 - 16}
+            width={32}
+            height={32}
+            crop={getNumberSpritePosition(domino.right)}
+          />
+        </Group>
+      )}
     </Group>
   );
 };
