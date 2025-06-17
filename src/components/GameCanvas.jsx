@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
-import { Stage, Layer, Image as KonvaImage, Rect } from 'react-konva';
+import { Stage, Layer, Image as KonvaImage } from 'react-konva';
 import { useGameStore } from '../store/gameStore';
+import GameBoard from './GameBoard';
 import useImage from '../hooks/useImage';
 
 const GameCanvas = () => {
@@ -72,6 +73,9 @@ const GameCanvas = () => {
             y={viewport.isLandscape ? 100 : 150}
           />
         )}
+        
+        {/* Game Board - only show during game */}
+        {currentPage === 'game' && <GameBoard />}
       </Layer>
     </Stage>
   );

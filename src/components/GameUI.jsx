@@ -3,7 +3,9 @@ import { useGameStore } from '../store/gameStore';
 import SettingsMenu from './ui/SettingsMenu';
 import ExitConfirmModal from './ui/ExitConfirmModal';
 import ResultModal from './ui/ResultModal';
-import GameBoard from './GameBoard';
+import PlayerInfo from './ui/PlayerInfo';
+import ScoreDisplay from './ui/ScoreDisplay';
+import GameStatus from './ui/GameStatus';
 
 const GameUI = () => {
   const { 
@@ -12,33 +14,54 @@ const GameUI = () => {
     currentPlayer,
     players,
     scores,
-    gameRound
+    gameRound,
+    board,
+    boneyard,
+    gameType,
+    drawFromBoneyard,
+    nextPlayer
   } = useGameStore();
+
+  const handlePass = () => {
+    if (gameType === 'draw' && boneyard.length > 0) {
+      drawFromBoneyard();
+    } else {
+      nextPlayer();
+    }
+  };
 
   return (
     <>
       {/* Game Status */}
-      <div className="game-status">
-        Round {gameRound} - Player {currentPlayer + 1}'s Turn
-      </div>
+      <GameStatus />
 
       {/* Player Info */}
-      <div className="player-info">
-        <div>Current Player: {currentPlayer + 1}</div>
-        <div>Dominoes: {players[currentPlayer]?.dominoes?.length || 0}</div>
-      </div>
+      <PlayerInfo />
 
       {/* Score Display */}
-      <div className="score-display">
-        {scores.map((score, index) => (
-          <div key={index}>
-            Player {index + 1}: {score}
-          </div>
-        ))}
-      </div>
+      <ScoreDisplay />
 
-      {/* Game Board */}
-      <GameBoard />
+      {/* Game Controls */}
+      <div className="game-controls">
+        <button 
+          className="pass-button"
+          onClick={handlePass}
+          style={{
+            position: 'absolute',
+            bottom: '20px',
+            right: '20px',
+            padding: '10px 20px',
+            background: '#FF6B6B',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            fontSize: '16px',
+            cursor: 'pointer'
+          }}
+        >
+          {gameType === 'draw' && boneyard.length > 0 ? 'Draw' : 'Pass'}
+        </button>
+      </div>
 
       {/* Settings Menu */}
       <SettingsMenu />
